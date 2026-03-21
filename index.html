@@ -1,134 +1,64 @@
 <!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>スライダー制御</title>
+</head>
+<body>
+<h1>RP2040 スライダー制御</h1>
 
-<html>
-<body style="font-family:sans-serif">
-
-<h2>太鼓コントローラー設定</h2>
-
-<button onclick="connect()">USB接続</button> <br><br>
-
-<div id="sliders"></div>
-
-<h3>叩き強度モニター</h3>
-<canvas id="meter" width="440" height="160"
-style="border:1px solid #888"></canvas>
+<div>
+    <label>Slider 1: <span id="val1">50</span></label>
+    <input type="range" id="slider1" min="0" max="100" value="50">
+</div>
+<div>
+    <label>Slider 2: <span id="val2">50</span></label>
+    <input type="range" id="slider2" min="0" max="100" value="50">
+</div>
+<div>
+    <label>Slider 3: <span id="val3">50</span></label>
+    <input type="range" id="slider3" min="0" max="100" value="50">
+</div>
+<div>
+    <label>Slider 4: <span id="val4">50</span></label>
+    <input type="range" id="slider4" min="0" max="100" value="50">
+</div>
 
 <script>
+const sliders = ["slider1", "slider2", "slider3", "slider4"];
+sliders.forEach((id, i) => {
+    const slider = document.getElementById(id);
+    const valSpan = document.getElementById("val" + (i+1));
+    slider.addEventListener("input", () => {
+        valSpan.textContent = slider.value;
+        sendToRP(sliders[i], slider.value);
+    });
+});
 
-let port, writer;
-
-const names=["左ドン","左カッ","右ドン","右カッ"];
-const colors=["#ff4444","#4488ff","#ff4444","#4488ff"];
-
-const peak=[0,0,0,0];
-let thresholds=[800,800,800,800];
-
-// ---------------- USB接続 ----------------
-async function connect(){
-  port = await navigator.serial.requestPort();
-  await port.open({ baudRate:115200 });
-
-  writer = port.writable.getWriter();
-  readLoop();
+// USBシリアルへの送信関数
+function sendToRP(key, value) {
+    if (navigator.serial) {
+        // Web Serial API を使う場合（Chrome / Edge）
+        if (!window.port) return;
+        const writer = window.port.writable.getWriter();
+        const msg = `${key}:${value}\n`;
+        writer.write(new TextEncoder().encode(msg));
+        writer.releaseLock();
+    }
 }
 
-// ---------------- スライダー ----------------
-function makeSlider(i){
- return `
- <div>
- ${names[i]}
- <input type="range"
-   min="100" max="4000"
-   value="${thresholds[i]}"
-   id="s${i}"
-   style="width:260px"
-   oninput="send()">
- </div>`;
+// 再接続処理
+async function connectSerial() {
+    if (navigator.serial) {
+        window.port = await navigator.serial.requestPort();
+        await window.port.open({ baudRate: 115200 });
+        console.log("接続成功");
+    } else {
+        alert("Web Serial API 非対応ブラウザです");
+    }
 }
 
-for(let i=0;i<4;i++)
- sliders.innerHTML+=makeSlider(i);
-
-// ---------------- 送信 ----------------
-async function send(){
-
- let msg="SET,";
- for(let i=0;i<4;i++){
-   thresholds[i]=document.getElementById("s"+i).value;
-   msg+=thresholds[i]+",";
- }
- msg+="\n";
-
- await writer.write(new TextEncoder().encode(msg));
-}
-
-// ---------------- メーター ----------------
-const ctx=meter.getContext("2d");
-
-function draw(values){
-
- ctx.clearRect(0,0,440,160);
-
- for(let i=0;i<4;i++){
-
-   // peak hold
-   if(values[i]>peak[i])
-       peak[i]=values[i];
-   else
-       peak[i]*=0.96;
-
-   let h=values[i]/40;
-   let ph=peak[i]/40;
-   let th=thresholds[i]/40;
-
-   // バー
-   ctx.fillStyle=colors[i];
-   ctx.fillRect(30+i*100,130-h,60,h);
-
-   // ピークライン
-   ctx.fillStyle="#ffffff";
-   ctx.fillRect(30+i*100,130-ph,60,3);
-
-   // しきい値ライン
-   ctx.fillStyle="#00ff88";
-   ctx.fillRect(30+i*100,130-th,60,2);
-
-   // ラベル
-   ctx.fillStyle="#000";
-   ctx.fillText(names[i],30+i*100,150);
- }
-}
-
-// ---------------- 受信 ----------------
-async function readLoop(){
-
- const reader=port.readable.getReader();
- const decoder=new TextDecoder();
-
- let buffer="";
-
- while(true){
-   const {value}=await reader.read();
-   buffer+=decoder.decode(value);
-
-   if(buffer.includes("\n")){
-     let line=buffer.trim();
-     buffer="";
-
-     if(line.startsWith("M")){
-       let v=line.split(",");
-       draw([
-         Number(v[1]),
-         Number(v[2]),
-         Number(v[3]),
-         Number(v[4])
-       ]);
-     }
-   }
- }
-}
-
+connectSerial();
 </script>
-
 </body>
 </html>
