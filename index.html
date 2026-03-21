@@ -2,10 +2,18 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>スライダー制御</title>
+<title>RP2040 スライダー制御</title>
+<style>
+body { font-family: sans-serif; margin: 20px; }
+div { margin-bottom: 15px; }
+label { margin-right: 10px; }
+</style>
 </head>
 <body>
+
 <h1>RP2040 スライダー制御</h1>
+
+<button id="connectBtn">RP2040 に接続</button>
 
 <div>
     <label>Slider 1: <span id="val1">50</span></label>
@@ -25,40 +33,74 @@
 </div>
 
 <script>
-const sliders = ["slider1", "slider2", "slider3", "slider4"];
+let port = null;
+
+// 1. USBシリアル接続ボタン
+document.getElementById("connectBtn").addEventListener("click", async () => {
+    try {
+        if (!navigator.serial) {
+            alert("Web Serial API 非対応ブラウザです");
+            return;
+        }
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        console.log("RP2040 に接続成功");
+
+        // 接続後、初期値をRP2040に送信
+        sliders.forEach((id, i) => {
+            const val = document.getElementById("slider" + (i+1)).value;
+            sendToRP(sliders[i], val);
+        });
+
+    } catch(e) {
+        console.log("接続失敗:", e);
+    }
+});
+
+// 2. スライダー設定
+const sliders = ["slider_1", "slider_2", "slider_3", "slider_4"];
 sliders.forEach((id, i) => {
-    const slider = document.getElementById(id);
+    const slider = document.getElementById("slider" + (i+1));
     const valSpan = document.getElementById("val" + (i+1));
+
+    // 値が変わったら表示更新＆RP2040に送信
     slider.addEventListener("input", () => {
         valSpan.textContent = slider.value;
         sendToRP(sliders[i], slider.value);
     });
 });
 
-// USBシリアルへの送信関数
+// 3. RP2040 に送信
 function sendToRP(key, value) {
-    if (navigator.serial) {
-        // Web Serial API を使う場合（Chrome / Edge）
-        if (!window.port) return;
-        const writer = window.port.writable.getWriter();
+    if (port && port.writable) {
+        const writer = port.writable.getWriter();
         const msg = `${key}:${value}\n`;
         writer.write(new TextEncoder().encode(msg));
         writer.releaseLock();
     }
 }
 
-// 再接続処理
-async function connectSerial() {
-    if (navigator.serial) {
-        window.port = await navigator.serial.requestPort();
-        await window.port.open({ baudRate: 115200 });
-        console.log("接続成功");
-    } else {
-        alert("Web Serial API 非対応ブラウザです");
-    }
-}
+// 4. 起動時に localStorage から保存値を復元
+window.addEventListener("load", () => {
+    sliders.forEach((id, i) => {
+        const slider = document.getElementById("slider" + (i+1));
+        const valSpan = document.getElementById("val" + (i+1));
+        const stored = localStorage.getItem(sliders[i]);
+        if (stored !== null) {
+            slider.value = stored;
+            valSpan.textContent = stored;
+        }
+    });
+});
 
-connectSerial();
+// 5. スライダー値変更時に localStorage に保存
+sliders.forEach((id, i) => {
+    const slider = document.getElementById("slider" + (i+1));
+    slider.addEventListener("input", () => {
+        localStorage.setItem(sliders[i], slider.value);
+    });
+});
 </script>
+
 </body>
 </html>
