@@ -53,7 +53,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   z-index:2;
 }
 
-/* 外周バー */
+/* 外周バーコンテナ */
 .ringContent{
   position:absolute;
   width:100%;
@@ -61,6 +61,20 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   top:0;
   left:0;
   z-index:1;
+  overflow:hidden;
+}
+
+/* D 左半分バー */
+.ring.d .ringContent{
+  clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+  left:-5px;
+  background:#333;
+}
+
+/* K 右半分バー */
+.ring.k .ringContent{
+  clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+  left:0;
   background:#333;
 }
 
@@ -72,7 +86,6 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   height:0%;
   transition:height 0.02s linear, background 0.05s linear;
   background:linear-gradient(to top,#00ff88,#00cc66);
-  border-radius:50%;
 }
 
 /* F/J 中央 300px円 */
