@@ -20,11 +20,13 @@
 
 let port;
 let writer;
+let reader;
 
+const statusText = document.getElementById("status");
 const threshold = document.getElementById("threshold");
 const thresholdValue = document.getElementById("thresholdValue");
 
-// ===== スライダー表示 =====
+// ===== スライダー =====
 threshold.oninput = () => {
     thresholdValue.textContent = threshold.value;
     sendLive();
@@ -37,8 +39,34 @@ async function connect() {
     await port.open({ baudRate:115200 });
 
     writer = port.writable.getWriter();
+    reader = port.readable.getReader();
 
-    document.getElementById("status").textContent = "接続OK";
+    statusText.textContent = "接続OK";
+
+    readLoop(); // ★受信開始
+}
+
+// ===== RP2040からの受信 =====
+async function readLoop() {
+
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value).trim();
+
+        console.log("RP2040:", text);
+
+        if (text === "SAVED") {
+            statusText.textContent = "✅ 保存完了";
+        }
+
+        if (text.startsWith("ERROR")) {
+            statusText.textContent = "❌ " + text;
+        }
+    }
 }
 
 // ===== リアルタイム送信 =====
@@ -52,9 +80,7 @@ async function sendLive() {
 
     const txt = "SET " + JSON.stringify(obj) + "\n";
 
-    await writer.write(
-        new TextEncoder().encode(txt)
-    );
+    await writer.write(new TextEncoder().encode(txt));
 }
 
 // ===== SAVE =====
@@ -62,14 +88,15 @@ async function save() {
 
     if (!writer) return;
 
+    statusText.textContent = "保存中...";
+
     await writer.write(
         new TextEncoder().encode("SAVE\n")
     );
-
-    document.getElementById("status").textContent = "保存要求送信";
 }
 
 </script>
 
 </body>
 </html>
+
