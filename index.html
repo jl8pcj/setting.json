@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>RP2040 太鼓アーケードUI F/J + D/K安定版</title>
+<title>RP2040 太鼓アーケードUI F/J + D/Kリング 分割10px</title>
 <style>
 body{
   background:#0b0b0b;
@@ -22,29 +22,70 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 .sliderRow input{width:48%;}
 
 .meterContainer{
-  display:flex;
-  justify-content:space-around;
-  align-items:flex-end;
-  height:300px;
-  margin-top:20px;
-  gap:10px;
+  position:relative;
+  width:500px;
+  height:500px;
+  margin:20px auto;
 }
 
-/* D/K 縦長矩形 */
-.meterWrap.d,.meterWrap.k{
-  position:relative;
-  width:40px;
-  height:100%;
-  background:#222;
+/* 外側リング D/K */
+.ring{
+  position:absolute;
+  width:450px;
+  height:450px;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
   overflow:hidden;
-  border-radius:4px;
 }
 
-/* F/J 正円コンテナ */
+.ringInner{
+  position:absolute;
+  width:320px;
+  height:320px;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:#0b0b0b;
+}
+
+.ringContent{
+  position:absolute;
+  width:100%;
+  height:100%;
+}
+
+/* 左右半分に分割 + 10pxクリアランス */
+.ring.d .ringContent{
+  clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+  left:-5px; /* 10px分クリアランス半分ずつ */
+  background:#333; /* 下がっている部分はグレー */
+}
+.ring.k .ringContent{
+  clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+  left:5px;
+  background:#333; /* 下がっている部分はグレー */
+}
+
+.ringContent .meterBar{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  height:0%;
+  transition:height 0.02s linear, background 0.05s linear;
+  background:linear-gradient(to top,#00ff88,#00cc66); /* 緑系 */
+}
+
+/* F/J 中央 300px円 */
 .circleContainer{
-  position:relative;
+  position:absolute;
+  top:50%;
+  left:50%;
   width:300px;
   height:300px;
+  transform:translate(-50%,-50%);
   display:flex;
   justify-content:center;
   align-items:flex-end;
@@ -53,7 +94,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   position:relative;
   height:300px;
   overflow:hidden;
-  background:#222;
+  background:#333; /* 下がっている部分はグレー */
 }
 .meterWrap.f{
   width:145px;
@@ -66,14 +107,15 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   margin-left:5px;
 }
 
-/* 中身バー */
-.meterBar{
+/* F/J バー */
+.meterWrap.f .meterBar,.meterWrap.j .meterBar{
   position:absolute;
   bottom:0;
   width:100%;
   height:0%;
-  transition:height 0.02s linear, background 0.05s linear;
+  background:linear-gradient(to top,#ff4040,#ff0000); /* 赤系 */
 }
+
 .peakBar{
   position:absolute;
   bottom:0;
@@ -85,7 +127,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 </head>
 <body>
 
-<h2>RP2040 太鼓アーケードUI F/J + D/K安定版</h2>
+<h2>RP2040 太鼓アーケードUI F/J + D/Kリング 分割10px</h2>
 <div id="status">
   <span id="led" class="dot red"></span>
   <span id="statText">DISCONNECTED</span>
@@ -137,38 +179,41 @@ function createUI(){
   channels.innerHTML="";
   meterContainer.innerHTML="";
 
-  // D
-  const dWrap=document.createElement("div");
-  dWrap.className="meterWrap d";
-  const dBar=document.createElement("div"); dBar.className="meterBar"; dBar.id="bar0"; dBar.style.background="linear-gradient(to top,#00ff88,#00cc66)";
-  const dPeak=document.createElement("div"); dPeak.className="peakBar"; dPeak.id="peak0";
-  dWrap.appendChild(dBar); dWrap.appendChild(dPeak);
-  meterContainer.appendChild(dWrap);
+  // Dリング
+  const dRing=document.createElement("div"); dRing.className="ring d";
+  const dInner=document.createElement("div"); dInner.className="ringInner";
+  const dContent=document.createElement("div"); dContent.className="ringContent";
+  const dBar=document.createElement("div"); dBar.className="meterBar"; dBar.id="bar0";
+  dContent.appendChild(dBar);
+  dRing.appendChild(dInner);
+  dRing.appendChild(dContent);
+  meterContainer.appendChild(dRing);
 
-  // F/J 正円コンテナ
+  // Kリング
+  const kRing=document.createElement("div"); kRing.className="ring k";
+  const kInner=document.createElement("div"); kInner.className="ringInner";
+  const kContent=document.createElement("div"); kContent.className="ringContent";
+  const kBar=document.createElement("div"); kBar.className="meterBar"; kBar.id="bar3";
+  kContent.appendChild(kBar);
+  kRing.appendChild(kInner);
+  kRing.appendChild(kContent);
+  meterContainer.appendChild(kRing);
+
+  // F/J 中央
   const circleContainer=document.createElement("div"); circleContainer.className="circleContainer";
-
   const fWrap=document.createElement("div"); fWrap.className="meterWrap f";
-  const fBar=document.createElement("div"); fBar.className="meterBar"; fBar.id="bar1"; fBar.style.background="linear-gradient(to top,#ff4040,#ff0000)";
+  const fBar=document.createElement("div"); fBar.className="meterBar"; fBar.id="bar1";
   const fPeak=document.createElement("div"); fPeak.className="peakBar"; fPeak.id="peak1";
   fWrap.appendChild(fBar); fWrap.appendChild(fPeak);
 
   const jWrap=document.createElement("div"); jWrap.className="meterWrap j";
-  const jBar=document.createElement("div"); jBar.className="meterBar"; jBar.id="bar2"; jBar.style.background="linear-gradient(to top,#ff4040,#ff0000)";
+  const jBar=document.createElement("div"); jBar.className="meterBar"; jBar.id="bar2";
   const jPeak=document.createElement("div"); jPeak.className="peakBar"; jPeak.id="peak2";
   jWrap.appendChild(jBar); jWrap.appendChild(jPeak);
 
   circleContainer.appendChild(fWrap);
   circleContainer.appendChild(jWrap);
   meterContainer.appendChild(circleContainer);
-
-  // K
-  const kWrap=document.createElement("div");
-  kWrap.className="meterWrap k";
-  const kBar=document.createElement("div"); kBar.className="meterBar"; kBar.id="bar3"; kBar.style.background="linear-gradient(to top,#00ff88,#00cc66)";
-  const kPeak=document.createElement("div"); kPeak.className="peakBar"; kPeak.id="peak3";
-  kWrap.appendChild(kBar); kWrap.appendChild(kPeak);
-  meterContainer.appendChild(kWrap);
 
   // スライダー UI
   for(let i=0;i<4;i++){
@@ -184,6 +229,7 @@ function createUI(){
 
 /* ================= SEND ================= */
 function send(obj){if(writer) writer.write(new TextEncoder().encode(JSON.stringify(obj)+"\n"));}
+
 function sendParam(ch,val,type){send({cmd:"set", ch:ch, type:type, value:parseFloat(val)});}
 saveBtn.onclick=()=>{setStatus("SAVING","yellow");send({cmd:"save"});};
 
@@ -191,17 +237,14 @@ saveBtn.onclick=()=>{setStatus("SAVING","yellow");send({cmd:"save"});};
 function updateMeter(ch,value){
   const percent=Math.min(100,(value/65535)*100);
   const bar=document.getElementById("bar"+ch);
-  const peak=document.getElementById("peak"+ch);
-
-  bar.style.height=percent+"%";
-
+  bar.style.height=percent+"%"; // 下から上
   if(percent>70){bar.style.background="white"; flashTimers[ch]=5;}
   if(flashTimers[ch]>0){flashTimers[ch]--; if(flashTimers[ch]==0){
     if(ch==0||ch==3) bar.style.background="linear-gradient(to top,#00ff88,#00cc66)";
     else bar.style.background="linear-gradient(to top,#ff4040,#ff0000)";
   }}
-
   if(value>peaks[ch]) peaks[ch]=value;
+  const peak=document.getElementById("peak"+ch);
   const peakPercent=(peaks[ch]/65535)*100;
   peak.style.bottom=peakPercent+"%";
 }
