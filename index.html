@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>RP2040 太鼓アーケードUI F/J + D/Kリング バランス版</title>
+<title>RP2040 太鼓アーケードUI F/J + D/K安定版</title>
 <style>
 body{
   background:#0b0b0b;
@@ -22,75 +22,29 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 .sliderRow input{width:48%;}
 
 .meterContainer{
+  display:flex;
+  justify-content:space-around;
+  align-items:flex-end;
+  height:300px;
+  margin-top:20px;
+  gap:10px;
+}
+
+/* D/K 縦長矩形 */
+.meterWrap.d,.meterWrap.k{
   position:relative;
-  width:500px;
-  height:500px;
-  margin:20px auto;
-}
-
-/* 外側リング共通 */
-.ring{
-  position:absolute;
-  width:450px;
-  height:450px;
-  top:50%;
-  border-radius:50%;
-  overflow:hidden;
-}
-
-.ringInner{
-  position:absolute;
-  width:320px;
-  height:320px;
-  top:50%;
-  transform:translateY(-50%);
-  border-radius:50%;
-  background:#0b0b0b; /* 中央円くり抜き部分 */
-}
-
-.ringContent{
-  position:absolute;
-  width:100%;
+  width:40px;
   height:100%;
+  background:#222;
+  overflow:hidden;
+  border-radius:4px;
 }
 
-/* 左右半分に分割 + 10pxクリアランス */
-.ring.d {
-  left: calc(50% - 150px - 10px); /* 中央円半径150px + 10px */
-  transform: translateY(-50%);
-}
-.ring.d .ringContent {
-  clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
-  background:#333; /* 下がっている部分はグレー */
-}
-
-.ring.k {
-  left: calc(50% + 150px + 10px); /* 中央円半径150px + 10px */
-  transform: translateY(-50%);
-}
-.ring.k .ringContent {
-  clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
-  background:#333;
-}
-
-/* 外側リングバー */
-.ringContent .meterBar{
-  position:absolute;
-  bottom:0;
-  width:100%;
-  height:0%;
-  transition:height 0.02s linear, background 0.05s linear;
-  background:linear-gradient(to top,#00ff88,#00cc66); /* 緑系 */
-}
-
-/* F/J 中央 300px円 */
+/* F/J 正円コンテナ */
 .circleContainer{
-  position:absolute;
-  top:50%;
-  left:50%;
+  position:relative;
   width:300px;
   height:300px;
-  transform:translate(-50%,-50%);
   display:flex;
   justify-content:center;
   align-items:flex-end;
@@ -99,7 +53,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   position:relative;
   height:300px;
   overflow:hidden;
-  background:#333; /* 下がっている部分はグレー */
+  background:#222;
 }
 .meterWrap.f{
   width:145px;
@@ -111,14 +65,15 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   border-radius:0 150px 150px 0;
   margin-left:5px;
 }
-.meterWrap.f .meterBar,.meterWrap.j .meterBar{
+
+/* 中身バー */
+.meterBar{
   position:absolute;
   bottom:0;
   width:100%;
   height:0%;
-  background:linear-gradient(to top,#ff4040,#ff0000); /* 赤系 */
+  transition:height 0.02s linear, background 0.05s linear;
 }
-
 .peakBar{
   position:absolute;
   bottom:0;
@@ -130,7 +85,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 </head>
 <body>
 
-<h2>RP2040 太鼓アーケードUI F/J + D/Kリング バランス版</h2>
+<h2>RP2040 太鼓アーケードUI F/J + D/K安定版</h2>
 <div id="status">
   <span id="led" class="dot red"></span>
   <span id="statText">DISCONNECTED</span>
@@ -140,6 +95,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 <button id="saveBtn">SAVE</button>
 
 <div id="channels" style="display:flex; justify-content:space-around; flex-wrap:wrap;"></div>
+
 <div class="meterContainer" id="meterContainer"></div>
 
 <script>
@@ -181,41 +137,38 @@ function createUI(){
   channels.innerHTML="";
   meterContainer.innerHTML="";
 
-  // Dリング
-  const dRing=document.createElement("div"); dRing.className="ring d";
-  const dInner=document.createElement("div"); dInner.className="ringInner";
-  const dContent=document.createElement("div"); dContent.className="ringContent";
-  const dBar=document.createElement("div"); dBar.className="meterBar"; dBar.id="bar0";
-  dContent.appendChild(dBar);
-  dRing.appendChild(dInner);
-  dRing.appendChild(dContent);
-  meterContainer.appendChild(dRing);
+  // D
+  const dWrap=document.createElement("div");
+  dWrap.className="meterWrap d";
+  const dBar=document.createElement("div"); dBar.className="meterBar"; dBar.id="bar0"; dBar.style.background="linear-gradient(to top,#00ff88,#00cc66)";
+  const dPeak=document.createElement("div"); dPeak.className="peakBar"; dPeak.id="peak0";
+  dWrap.appendChild(dBar); dWrap.appendChild(dPeak);
+  meterContainer.appendChild(dWrap);
 
-  // Kリング
-  const kRing=document.createElement("div"); kRing.className="ring k";
-  const kInner=document.createElement("div"); kInner.className="ringInner";
-  const kContent=document.createElement("div"); kContent.className="ringContent";
-  const kBar=document.createElement("div"); kBar.className="meterBar"; kBar.id="bar3";
-  kContent.appendChild(kBar);
-  kRing.appendChild(kInner);
-  kRing.appendChild(kContent);
-  meterContainer.appendChild(kRing);
-
-  // F/J 中央
+  // F/J 正円コンテナ
   const circleContainer=document.createElement("div"); circleContainer.className="circleContainer";
+
   const fWrap=document.createElement("div"); fWrap.className="meterWrap f";
-  const fBar=document.createElement("div"); fBar.className="meterBar"; fBar.id="bar1";
+  const fBar=document.createElement("div"); fBar.className="meterBar"; fBar.id="bar1"; fBar.style.background="linear-gradient(to top,#ff4040,#ff0000)";
   const fPeak=document.createElement("div"); fPeak.className="peakBar"; fPeak.id="peak1";
   fWrap.appendChild(fBar); fWrap.appendChild(fPeak);
 
   const jWrap=document.createElement("div"); jWrap.className="meterWrap j";
-  const jBar=document.createElement("div"); jBar.className="meterBar"; jBar.id="bar2";
+  const jBar=document.createElement("div"); jBar.className="meterBar"; jBar.id="bar2"; jBar.style.background="linear-gradient(to top,#ff4040,#ff0000)";
   const jPeak=document.createElement("div"); jPeak.className="peakBar"; jPeak.id="peak2";
   jWrap.appendChild(jBar); jWrap.appendChild(jPeak);
 
   circleContainer.appendChild(fWrap);
   circleContainer.appendChild(jWrap);
   meterContainer.appendChild(circleContainer);
+
+  // K
+  const kWrap=document.createElement("div");
+  kWrap.className="meterWrap k";
+  const kBar=document.createElement("div"); kBar.className="meterBar"; kBar.id="bar3"; kBar.style.background="linear-gradient(to top,#00ff88,#00cc66)";
+  const kPeak=document.createElement("div"); kPeak.className="peakBar"; kPeak.id="peak3";
+  kWrap.appendChild(kBar); kWrap.appendChild(kPeak);
+  meterContainer.appendChild(kWrap);
 
   // スライダー UI
   for(let i=0;i<4;i++){
@@ -238,14 +191,17 @@ saveBtn.onclick=()=>{setStatus("SAVING","yellow");send({cmd:"save"});};
 function updateMeter(ch,value){
   const percent=Math.min(100,(value/65535)*100);
   const bar=document.getElementById("bar"+ch);
-  bar.style.height=percent+"%"; // 下から上
+  const peak=document.getElementById("peak"+ch);
+
+  bar.style.height=percent+"%";
+
   if(percent>70){bar.style.background="white"; flashTimers[ch]=5;}
   if(flashTimers[ch]>0){flashTimers[ch]--; if(flashTimers[ch]==0){
     if(ch==0||ch==3) bar.style.background="linear-gradient(to top,#00ff88,#00cc66)";
     else bar.style.background="linear-gradient(to top,#ff4040,#ff0000)";
   }}
+
   if(value>peaks[ch]) peaks[ch]=value;
-  const peak=document.getElementById("peak"+ch);
   const peakPercent=(peaks[ch]/65535)*100;
   peak.style.bottom=peakPercent+"%";
 }
@@ -266,4 +222,22 @@ async function startRead(){
     for(const line of lines){
       if(!line.startsWith("{")) continue;
       try{
-        const data=JSON.parse(line)
+        const data=JSON.parse(line);
+        if(data.type==="adc"){setStatus("RECEIVING DATA","green");updateMeter(data.ch,data.value);}
+        if(data.type==="saved") setStatus("SAVED ✓","green");
+        if(data.type==="save_error") setStatus("SAVE ERROR","red");
+        if(data.type==="settings"){
+          const sliders=document.querySelectorAll(".sliderRow input");
+          for(let i=0;i<4;i++){sliders[i*2].value=data.gain[i]; sliders[i*2+1].value=data.threshold[i];}
+          setStatus("SETTINGS LOADED","green");
+        }
+      }catch(e){}
+    }
+  }
+}
+
+/* ================= WATCHDOG ================= */
+setInterval(()=>{if(Date.now()-lastReceive>1500) setStatus("NO DATA","red");},500);
+</script>
+</body>
+</html>
