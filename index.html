@@ -17,36 +17,9 @@ h2{margin-bottom:10px;}
 .yellow{background:#ffd000;}
 .green{background:#00ff88;}
 button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
-.channelCard{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  justify-content:center;
-  margin:10px;
-  padding:10px;
-  background:#151515;
-  border:1px solid #333;
-  width:180px; /* 幅少し広げてスライダー長く */
-}
-.sliderRow{
-  display:flex;
-  align-items:center;
-  margin-bottom:10px;
-}
-.sliderRow.vertical{
-  flex-direction:row;
-}
-.sliderRow.vertical label{
-  width:60px; /* 左ラベル幅 */
-  margin-right:10px;
-  text-align:left;
-}
-.sliderRow.vertical input[type=range]{
-  flex:1; /* ラベル以外のスペースを全部使用 */
-  height:20px;
-}
-
-/* メーター */
+.channelCard{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:10px;padding:10px;background:#151515;border:1px solid #333;width:120px;}
+.sliderRow{display:flex;justify-content:space-between;width:100%;margin-bottom:10px;}
+.sliderRow input{width:48%;}
 .meterContainer{
   position:relative;
   width:500px;
@@ -65,6 +38,8 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   border-radius:50%;
   overflow:hidden;
 }
+
+/* 内側円を小さくして外周との隙間確保 */
 .ring.d .ringInner,
 .ring.k .ringInner{
   position:absolute;
@@ -77,6 +52,8 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   background:#0b0b0b;
   z-index:2;
 }
+
+/* 外周バーコンテナを少し小さくして内円との隙間確保 */
 .ringContent{
   position:absolute;
   width:450px;
@@ -87,14 +64,20 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   z-index:1;
   overflow:hidden;
 }
+
+/* D 左半分バー（右側を5px内側） */
 .ring.d .ringContent{
   clip-path: polygon(0 0, calc(50% - 5px) 0, calc(50% - 5px) 100%, 0 100%);
   background:#222;
 }
+
+/* K 右半分バー（左側を5px内側） */
 .ring.k .ringContent{
   clip-path: polygon(calc(50% + 5px) 0, 100% 0, 100% 100%, calc(50% + 5px) 100%);
   background:#222;
 }
+
+/* バー */
 .ringContent .meterBar{
   position:absolute;
   bottom:0;
@@ -103,6 +86,8 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   transition:height 0.02s linear, background 0.05s linear;
   background:linear-gradient(to top,#00ff88,#00cc66);
 }
+
+/* D/K 用ピークバー */
 .ringContent .peakBar{
   position:absolute;
   bottom:0;
@@ -157,7 +142,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 </style>
 </head>
 <body>
-<h2>Doncon 感度調整2</h2>
+<h2>Doncon 感度調整</h2>
 <div id="status">
   <span id="led" class="dot red"></span>
   <span id="statText">DISCONNECTED</span>
@@ -170,7 +155,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 <script>
 let port, reader, writer;
 let lastReceive=0;
-const names=["左カッ","左ドン","右ドン","右カッ"];
+const names=["D","F","J","K"];
 let peaks=[0,0,0,0];
 let flashTimers=[0,0,0,0];
 const led=document.getElementById("led");
@@ -219,10 +204,12 @@ function createUI(){
   dBar.className="meterBar";
   dBar.id="bar0";
   dContent.appendChild(dBar);
+  // Dピークバー
   const dPeak=document.createElement("div");
   dPeak.className="peakBar";
   dPeak.id="peak0";
   dContent.appendChild(dPeak);
+
   dRing.appendChild(dInner);
   dRing.appendChild(dContent);
   meterContainer.appendChild(dRing);
@@ -231,16 +218,19 @@ function createUI(){
   const kRing=document.createElement("div");
   kRing.className="ring k";
   const kInner=document.createElement("div");
+  kInner.className="ringInner";
   const kContent=document.createElement("div");
   kContent.className="ringContent";
   const kBar=document.createElement("div");
   kBar.className="meterBar";
   kBar.id="bar3";
   kContent.appendChild(kBar);
+  // Kピークバー
   const kPeak=document.createElement("div");
   kPeak.className="peakBar";
   kPeak.id="peak3";
   kContent.appendChild(kPeak);
+
   kRing.appendChild(kInner);
   kRing.appendChild(kContent);
   meterContainer.appendChild(kRing);
@@ -248,6 +238,7 @@ function createUI(){
   // F/J 中央
   const circleContainer=document.createElement("div");
   circleContainer.className="circleContainer";
+
   const fWrap=document.createElement("div");
   fWrap.className="meterWrap f";
   const fBar=document.createElement("div");
@@ -279,12 +270,8 @@ function createUI(){
     const div=document.createElement("div");
     div.className="channelCard";
     div.innerHTML=`<h3>${names[i]}</h3>
-      <div class="sliderRow vertical">
-        <label>gain</label>
+      <div class="sliderRow">
         <input type="range" min="0.5" max="5" step="0.1" value="1" oninput="sendParam(${i},this.value,'gain')">
-      </div>
-      <div class="sliderRow vertical">
-        <label>threshold</label>
         <input type="range" min="1000" max="40000" step="500" value="15000" oninput="sendParam(${i},this.value,'threshold')">
       </div>`;
     channels.appendChild(div);
@@ -293,6 +280,7 @@ function createUI(){
 
 /* ================= SEND ================= */
 function send(obj){if(writer) writer.write(new TextEncoder().encode(JSON.stringify(obj)+"\n"));}
+
 function sendParam(ch,val,type){send({cmd:"set", ch:ch, type:type, value:parseFloat(val)});}
 saveBtn.onclick=()=>{setStatus("SAVING","yellow");send({cmd:"save"});};
 
@@ -301,6 +289,7 @@ function updateMeter(ch,value){
   const percent=Math.min(100,(value/65535)*100);
   const bar=document.getElementById("bar"+ch);
   bar.style.height=percent+"%";
+
   if(percent>70){bar.style.background="white"; flashTimers[ch]=5;}
   if(flashTimers[ch]>0){
     flashTimers[ch]--;
@@ -309,13 +298,14 @@ function updateMeter(ch,value){
       else bar.style.background="linear-gradient(to top,#ff4040,#ff0000)";
     }
   }
+
   if(value>peaks[ch]) peaks[ch]=value;
   const peak=document.getElementById("peak"+ch);
   const peakPercent=(peaks[ch]/65535)*100;
   peak.style.bottom=peakPercent+"%";
 }
 
-/* peak decay */
+/* peak decay（少し遅めに残す） */
 setInterval(()=>{for(let i=0;i<4;i++) peaks[i]*=0.96;},40);
 
 /* ================= READ ================= */
