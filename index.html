@@ -139,6 +139,20 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   height:3px;
   background:#fff;
 }
+/* メッセージ入力枠 */
+#messageBox{
+  position:absolute;
+  left:520px;       
+  top:50%;
+  transform:translateY(-50%);
+  width:150px;
+  height:30px;
+  background:#111;
+  color:#0f0;
+  border:1px solid #333;
+  padding:4px;
+  font-size:14px;
+}
 </style>
 </head>
 <body>
@@ -265,18 +279,12 @@ function createUI(){
   circleContainer.appendChild(jWrap);
   meterContainer.appendChild(circleContainer);
 
-  // ピーク値テキストボックス D F J K
-  for(let i=0;i<4;i++){
-    const input=document.createElement("input");
-    input.type="text";
-    input.id="peakText"+i;
-    input.readOnly=true;
-    input.className="peakText";
-    // 位置設定
-    input.style.left=(500+70*(i%2))+"px"; // メーター右側にずらして配置
-    input.style.top=(50 + 120*(i%2))+"px"; 
-    meterContainer.appendChild(input);
-  }
+  // メッセージボックス（1つ）
+  const msgBox=document.createElement("input");
+  msgBox.type="text";
+  msgBox.id="messageBox";
+  msgBox.placeholder="ここにメッセージ入力";
+  meterContainer.appendChild(msgBox);
   
   // スライダー UI
   for(let i=0;i<4;i++){
