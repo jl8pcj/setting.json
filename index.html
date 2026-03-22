@@ -3,68 +3,23 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>RP2040 Controller</title>
-<style>
-body { font-family:sans-serif; padding:20px; }
-.sliderBox { margin:20px 0; }
-.value { font-weight:bold; margin-left:10px; }
-button { font-size:16px; margin-right:10px; }
-</style>
+<title>RP2040 TEST</title>
 </head>
 
 <body>
 
-<h2>RP2040 設定</h2>
-
-<button onclick="connect()">USB接続</button> <button onclick="save()">SAVE</button>
+<button onclick="connect()">USB接続</button>
 
 <p id="status">未接続</p>
 
-<div class="sliderBox">
-<label>Threshold:</label><br>
-<input type="range" id="threshold" min="0" max="65535" value="30000">
-<span class="value" id="thresholdValue">30000</span>
-</div>
-
-<div class="sliderBox">
-<label>Gain:</label><br>
-<input type="range" id="gain" min="1" max="10" value="1">
-<span class="value" id="gainValue">1</span>
-</div>
-
 <script>
 
-let port;
-let writer;
-
-// ===== スライダー表示更新 =====
-const threshold = document.getElementById("threshold");
-const gain = document.getElementById("gain");
-
-threshold.oninput = () => {
-    thresholdValue.textContent = threshold.value;
-    sendLive();
-};
-
-gain.oninput = () => {
-    gainValue.textContent = gain.value;
-    sendLive();
-};
-
-// ===== USB接続 =====
 async function connect() {
-
-    port = await navigator.serial.requestPort();
-    await port.open({ baudRate:115200 });
-
-    writer = port.writable.getWriter();
-
-    status.textContent = "接続OK";
+    document.getElementById("status").textContent =
+        "connect() 呼ばれました";
 }
 
-// ===== リアルタイム送信（保存しない）=====
-async function sendLive() {
+</script>
 
-    if (!writer) return;
-
-    c
+</body>
+</html>
