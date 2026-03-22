@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>RP2040 太鼓アーケードUI F/J + D/Kリング 分割10px</title>
+<title>RP2040 太鼓アーケードUI F/J + D/Kリング 完全版</title>
 <style>
 body{
   background:#0b0b0b;
@@ -28,14 +28,12 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   margin:20px auto;
 }
 
-/* 外側リング D/K */
+/* 外側リング共通 */
 .ring{
   position:absolute;
   width:450px;
   height:450px;
   top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
   border-radius:50%;
   overflow:hidden;
 }
@@ -45,10 +43,9 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   width:320px;
   height:320px;
   top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
+  transform:translateY(-50%);
   border-radius:50%;
-  background:#0b0b0b;
+  background:#0b0b0b; /* 中央円のくりぬき部分 */
 }
 
 .ringContent{
@@ -58,17 +55,24 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 }
 
 /* 左右半分に分割 + 10pxクリアランス */
-.ring.d .ringContent{
+.ring.d {
+  left: calc(50% - 150px - 10px); /* 中央円半径 150 + 10pxクリアランス */
+  transform: translateY(-50%);
+}
+.ring.d .ringContent {
   clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
-  left:-5px; /* 10px分クリアランス半分ずつ */
   background:#333; /* 下がっている部分はグレー */
 }
-.ring.k .ringContent{
+.ring.k {
+  left: calc(50% + 150px + 10px); /* 中央円半径 150 + 10pxクリアランス */
+  transform: translateY(-50%);
+}
+.ring.k .ringContent {
   clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
-  left:5px;
-  background:#333; /* 下がっている部分はグレー */
+  background:#333;
 }
 
+/* 外側リングバー */
 .ringContent .meterBar{
   position:absolute;
   bottom:0;
@@ -106,8 +110,6 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   border-radius:0 150px 150px 0;
   margin-left:5px;
 }
-
-/* F/J バー */
 .meterWrap.f .meterBar,.meterWrap.j .meterBar{
   position:absolute;
   bottom:0;
@@ -127,7 +129,7 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 </head>
 <body>
 
-<h2>RP2040 太鼓アーケードUI F/J + D/Kリング 分割10px</h2>
+<h2>RP2040 太鼓アーケードUI F/J + D/Kリング 完全版</h2>
 <div id="status">
   <span id="led" class="dot red"></span>
   <span id="statText">DISCONNECTED</span>
@@ -137,7 +139,6 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 <button id="saveBtn">SAVE</button>
 
 <div id="channels" style="display:flex; justify-content:space-around; flex-wrap:wrap;"></div>
-
 <div class="meterContainer" id="meterContainer"></div>
 
 <script>
@@ -229,7 +230,6 @@ function createUI(){
 
 /* ================= SEND ================= */
 function send(obj){if(writer) writer.write(new TextEncoder().encode(JSON.stringify(obj)+"\n"));}
-
 function sendParam(ch,val,type){send({cmd:"set", ch:ch, type:type, value:parseFloat(val)});}
 saveBtn.onclick=()=>{setStatus("SAVING","yellow");send({cmd:"save"});};
 
