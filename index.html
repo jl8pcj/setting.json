@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>RP2040 太鼓アーケードUI F/J中央 + 縦半分リングDK</title>
+<title>RP2040 太鼓アーケードUI F/J中央 + 縦半分リングDK クリアランス10px</title>
 <style>
 body{
   background:#0b0b0b;
@@ -21,7 +21,6 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 .sliderRow{display:flex;justify-content:space-between;width:100%;margin-bottom:10px;}
 .sliderRow input{width:48%;}
 
-/* メーターコンテナ */
 .meterContainer{
   position:relative;
   width:500px;
@@ -38,7 +37,6 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
   left:50%;
   transform:translate(-50%,-50%);
   border-radius:50%;
-  background:#222;
   overflow:hidden;
 }
 .ringInner{
@@ -60,9 +58,11 @@ button{font-size:16px;padding:10px 16px;margin-right:10px;cursor:pointer;}
 /* 左右半分クリップ */
 .ring.d .ringContent{
   clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+  left: -10px; /* F/Jとの間隔10px */
 }
 .ring.k .ringContent{
   clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+  left: 10px; /* F/Jとの間隔10px */
 }
 
 /* 中身バー */
